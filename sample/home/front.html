@@ -1,0 +1,65 @@
+<html>
+	<head>
+		<title>govent</title>
+		<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.0/jquery.min.js"></script>
+		<style type="text/css">
+			body {
+				font-family: Monaco, monospace;
+			}
+			#buffer {
+				display: block;
+				font-size: larger;
+				height: 30em;
+				width: 60%;
+			}
+			#input {
+				display: block;
+				font-size: larger;
+				width: 40%;
+			}
+			#footer {
+				font-size: smaller;
+			}
+		</style>
+	</head>
+	<body>
+
+<h1>govent</h1>
+
+<textarea id="buffer" readonly="readonly">
+</textarea>
+
+<input id="input" type="text" />
+
+<div id="footer">
+	Powered by <a href="https://developers.google.com/appengine/docs/go/">a horde of gophers</a>.
+</div>
+
+<script type="text/javascript">
+$(function() {
+	$('#input').focus();
+	$('#input').keypress(function(event) {
+		if (event.which == 13) { // Return
+			cmd();
+		}
+	});
+});
+
+function cmd() {
+	var input = $('#input').val();
+	$('#input').val('');
+	$.post('/cmd', {cmd: input}, function(data) {
+		if (data.error) {
+			alert(input);
+		}
+		if (data.reply) {
+			var x = $('#buffer').val();
+			x = x + data.reply + '\n';
+			$('#buffer').val(x);
+		}
+	});
+}
+</script>
+
+	</body>
+</html>
