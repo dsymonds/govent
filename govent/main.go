@@ -4,6 +4,7 @@ Package govent ...
 package govent
 
 import (
+	"encoding/json"
 	"fmt"
 )
 
@@ -11,18 +12,18 @@ type Interface interface {
 }
 
 type State struct {
+	Count int // number of commands
 }
 
 func (s *State) Marshal() ([]byte, error) {
-	// TODO
-	return []byte{}, nil
+	return json.Marshal(s)
 }
 
 func (s *State) Unmarshal(data []byte) error {
-	// TODO
-	return nil
+	return json.Unmarshal(data, s)
 }
 
 func (s *State) Execute(cmd string) string {
-	return fmt.Sprintf("You said %q", cmd)
+	s.Count++
+	return fmt.Sprintf("You said %q. That was your %dth command.", cmd, s.Count)
 }

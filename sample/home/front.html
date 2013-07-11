@@ -48,16 +48,21 @@ $(function() {
 function cmd() {
 	var input = $('#input').val();
 	$('#input').val('');
+	postLine('> ' + input);
 	$.post('/cmd', {cmd: input}, function(data) {
 		if (data.error) {
-			alert(input);
+			alert(data.error);
 		}
 		if (data.reply) {
-			var x = $('#buffer').val();
-			x = x + data.reply + '\n';
-			$('#buffer').val(x);
+			postLine(data.reply);
 		}
 	});
+}
+
+function postLine(s) {
+	var x = $('#buffer').val();
+	x = x + s + '\n';
+	$('#buffer').val(x);
 }
 </script>
 

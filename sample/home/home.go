@@ -81,11 +81,12 @@ func doCmd(c appengine.Context, cmd string) (string, error) {
 	state := new(govent.State)
 	var encState State
 	err := datastore.Get(c, stateKey, &encState)
-	if err == nil {
-		err = state.Unmarshal(encState.X)
-	}
 	if err != nil && err != datastore.ErrNoSuchEntity {
 		return "", err
+	}
+	if err := state.Unmarshal(encState.X); err != nil {
+		// press on anyway
+		c.Errorf("Bad state, forgetting about it: %v", err)
 	}
 
 	reply := state.Execute(cmd)
