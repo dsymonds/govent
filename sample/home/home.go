@@ -1,103 +1,45 @@
 package home
 
 import (
-	"bytes"
 	"encoding/json"
-	"html/template"
-	"io"
+	"fmt"
 	"net/http"
-	"strconv"
-
-	"appengine"
-	"appengine/datastore"
-	"appengine/user"
+	"strings"
 
 	"github.com/dsymonds/govent/govent"
 )
 
 func init() {
-	http.HandleFunc("/", handleFront)
-	http.HandleFunc("/cmd", handleCmd)
-}
-
-var pages = template.Must(template.New("").ParseGlob("*.html"))
-
-func handleFront(w http.ResponseWriter, r *http.Request) {
-	if r.URL.Path != "/" {
-		http.NotFound(w, r)
-		return
-	}
-
-	var b bytes.Buffer
-	if err := pages.ExecuteTemplate(&b, "front.html", nil); err != nil {
-		http.Error(w, err.Error(), 500)
-		return
-	}
-	w.Header().Set("Content-Length", strconv.Itoa(b.Len()))
-	io.Copy(w, &b)
-}
-
-// State represents the marshaled state stored in datastore.
-type State struct {
-	X []byte
-}
-
-// CmdReply represents the JSON reply from /cmd.
-type CmdReply struct {
-	Reply string `json:"reply,omitempty"`
-	Error error  `json:"error,omitempty"`
-}
-
-func handleCmd(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "POST" {
-		http.Error(w, "should be a POST", http.StatusMethodNotAllowed)
-		return
-	}
-
-	c := appengine.NewContext(r)
-	cmd := r.FormValue("cmd")
-	c.Debugf("cmd %s", cmd)
-	reply, err := doCmd(c, cmd)
-	c.Debugf("-> %q, %v", reply, err)
-	b, err := json.Marshal(&CmdReply{
-		Reply: reply,
-		Error: err,
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		s := govent.NewState(&game{})
+		s.ServeHTTP(w, r)
 	})
-	if err != nil {
-		// should not happen
-		c.Errorf("json.Marshal: %v", err)
-		http.Error(w, "oopsie, internal error", 500)
-		return
-	}
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.Header().Set("Content-Length", strconv.Itoa(len(b)))
-	w.Write(b)
 }
 
-func doCmd(c appengine.Context, cmd string) (string, error) {
-	stateKey := datastore.NewKey(c, "State", "state:"+user.Current(c).Email, 0, nil)
+type game struct{
+	Count int
+}
 
-	// load state
-	state := new(govent.State)
-	var encState State
-	err := datastore.Get(c, stateKey, &encState)
-	if err != nil && err != datastore.ErrNoSuchEntity {
-		return "", err
-	}
-	if err := state.Unmarshal(encState.X); err != nil {
-		// press on anyway
-		c.Errorf("Bad state, forgetting about it: %v", err)
+func (g *game) Marshal() ([]byte, error) {
+	return json.Marshal(g)
+}
+
+func (g *game) Unmarshal(data []byte) error {
+	return json.Unmarshal(data, g)
+}
+
+func (g *game) Execute(cmd string) string {
+	g.Count++
+
+	// Hack night!
+	switch {
+	case cmd == "LOOK":
+		return "You are in a room full of gophers."
+	case strings.HasPrefix(cmd, "LOOK AT "):
+		return "He glares at you in return."
+	case cmd == "GET LAMP":
+		return "Okay, you have a lamp, smartass. Now what?"
 	}
 
-	reply := state.Execute(cmd)
-
-	// save state
-	if encState.X, err = state.Marshal(); err != nil {
-		return "", err
-	}
-	if _, err = datastore.Put(c, stateKey, &encState); err != nil {
-		return "", err
-	}
-
-	return reply, nil
+	return fmt.Sprintf("You said %q. That was your %dth command.", cmd, g.Count)
 }
