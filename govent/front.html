@@ -43,12 +43,22 @@ $(function() {
 			cmd();
 		}
 	});
+
+	// Post an empty cmd to start.
+	doCmd("");
 });
 
 function cmd() {
-	var input = $('#input').val();
+	var input = $.trim($('#input').val());
+	if (input == "") {
+		return;
+	}
 	$('#input').val('');
 	postLine('> ' + input);
+	doCmd(input);
+}
+
+function doCmd(input) {
 	$.post('/cmd', {cmd: input}, function(data) {
 		if (data.error) {
 			alert(data.error);

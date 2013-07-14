@@ -2,9 +2,7 @@ package home
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
-	"strings"
 
 	"github.com/dsymonds/govent/govent"
 )
@@ -16,8 +14,10 @@ func init() {
 	})
 }
 
-type game struct{
+type game struct {
 	Count int
+
+	Location int // 0 == inside house, 1 == outside
 }
 
 func (g *game) Marshal() ([]byte, error) {
@@ -31,15 +31,38 @@ func (g *game) Unmarshal(data []byte) error {
 func (g *game) Execute(cmd string) string {
 	g.Count++
 
-	// Hack night!
-	switch {
-	case cmd == "LOOK":
-		return "You are in a room full of gophers."
-	case strings.HasPrefix(cmd, "LOOK AT "):
-		return "He glares at you in return."
-	case cmd == "GET LAMP":
-		return "Okay, you have a lamp, smartass. Now what?"
+	const (
+		insideText  = "You are standing in a house consisting of a single room."
+		outsideText = "You are standing outside. It is a beautiful sunny day."
+	)
+
+	if cmd == "" || cmd == "LOOK" {
+		switch g.Location {
+		case 0:
+			return insideText
+		case 1:
+			return outsideText
+		}
 	}
 
-	return fmt.Sprintf("You said %q. That was your %dth command.", cmd, g.Count)
+	switch g.Location {
+	case 0:
+		switch cmd {
+		case "GO OUTSIDE":
+			g.Location = 1
+			return outsideText
+		case "GO INSIDE":
+			return "You're already inside, silly!"
+		}
+	case 1:
+		switch cmd {
+		case "GO INSIDE":
+			g.Location = 0
+			return insideText
+		case "GO OUTSIDE":
+			return "Outside? That's where you are now!"
+		}
+	}
+
+	return "I don't understand."
 }
