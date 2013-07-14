@@ -56,9 +56,7 @@ $(function() {
 	});
 	$('#reset').click(function() {
 		if (confirm("Reset game state?")) {
-			$.post('/reset', function() {
-			       location.reload(true);
-			});
+			reset();
 		}
 	});
 	$('#dump-state').click(function() {
@@ -70,6 +68,12 @@ $(function() {
 	// Post an empty cmd to start.
 	doCmd("");
 });
+
+function reset() {
+	$.post('/reset', function() {
+	       location.reload(true);
+	});
+}
 
 function cmd() {
 	var input = $.trim($('#input').val());
@@ -88,6 +92,13 @@ function doCmd(input) {
 		}
 		if (data.reply) {
 			postLine(data.reply);
+		}
+		if (data.gameOver) {
+			window.setTimeout(function() {
+				if (confirm("Game over. Play again?")) {
+					reset();
+				}
+			}, 2000);
 		}
 	});
 }

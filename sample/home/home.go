@@ -17,19 +17,22 @@ func init() {
 type game struct {
 	Count int
 
-	Location int // 0 == inside house, 1 == outside
+	Location int  // 0 == inside house, 1 == outside
+	LBOpen   bool // whether the letterbox is open
+	GotMail  bool // whether the mail has been retrieved
 }
 
 func (g *game) Title() string               { return "Home Quest" }
 func (g *game) Marshal() ([]byte, error)    { return json.Marshal(g) }
 func (g *game) Unmarshal(data []byte) error { return json.Unmarshal(data, g) }
+func (g *game) GameOver() bool              { return g.GotMail }
 
 func (g *game) Execute(cmd string) string {
 	g.Count++
 
 	const (
 		insideText  = "You are standing in a house consisting of a single room."
-		outsideText = "You are standing outside. It is a beautiful sunny day."
+		outsideText = "You are standing outside. It is a beautiful sunny day. There is a letterbox here."
 	)
 
 	if cmd == "" || cmd == "LOOK" {
@@ -57,6 +60,18 @@ func (g *game) Execute(cmd string) string {
 			return insideText
 		case "GO OUTSIDE":
 			return "Outside? That's where you are now!"
+		case "OPEN LETTERBOX":
+			if g.LBOpen {
+				return "It's already open!"
+			}
+			g.LBOpen = true
+			return "You open the letterbox. The hinge squeaks. There is some mail inside it."
+		case "GET MAIL":
+			if !g.LBOpen {
+				return "The letterbox is shut."
+			}
+			g.GotMail = true
+			return "You take the mail and read it. It's a bill. Hooray."
 		}
 	}
 

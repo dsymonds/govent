@@ -25,6 +25,8 @@ type Interface interface {
 	Title() string
 	// Execute runs a command.
 	Execute(cmd string) string
+	// GameOver reports whether the game is over.
+	GameOver() bool
 
 	// state save and restore
 	Marshal() ([]byte, error)
@@ -71,8 +73,9 @@ func (s *State) handleFront(w http.ResponseWriter, r *http.Request) {
 
 // cmdReply represents the JSON reply from /cmd.
 type cmdReply struct {
-	Reply string `json:"reply,omitempty"`
-	Error error  `json:"error,omitempty"`
+	Reply    string `json:"reply,omitempty"`
+	Error    error  `json:"error,omitempty"`
+	GameOver bool   `json:"gameOver,omitempty"`
 }
 
 // encState represents the marshaled state stored in datastore.
@@ -96,8 +99,9 @@ func (s *State) handleCmd(w http.ResponseWriter, r *http.Request) {
 	reply, err := s.doCmd(c, cmd)
 	c.Debugf("-> %q, %v", reply, err)
 	b, err := json.Marshal(&cmdReply{
-		Reply: reply,
-		Error: err,
+		Reply:    reply,
+		Error:    err,
+		GameOver: s.iface.GameOver(),
 	})
 	if err != nil {
 		// should not happen
