@@ -104,9 +104,11 @@ func (s *State) doCmd(c appengine.Context, cmd string) (string, error) {
 	if err != nil && err != datastore.ErrNoSuchEntity {
 		return "", err
 	}
-	if err := s.iface.Unmarshal(encState.X); err != nil {
-		// press on anyway
-		c.Errorf("Bad state, forgetting about it: %v", err)
+	if err == nil {
+		if err := s.iface.Unmarshal(encState.X); err != nil {
+			// press on anyway
+			c.Errorf("Bad state, forgetting about it: %v", err)
+		}
 	}
 
 	reply := s.iface.Execute(cmd)
