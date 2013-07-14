@@ -41,6 +41,8 @@ func (s *State) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		s.handleFront(w, r)
 	case "/cmd":
 		s.handleCmd(w, r)
+	case "/dump-state":
+		s.handleDumpState(w, r)
 	case "/reset":
 		s.handleReset(w, r)
 	default:
@@ -67,6 +69,10 @@ type cmdReply struct {
 // encState represents the marshaled state stored in datastore.
 type encState struct {
 	X []byte
+}
+
+func (s *State) stateKey(c appengine.Context) *datastore.Key {
+	return datastore.NewKey(c, "State", "state:"+user.Current(c).Email, 0, nil)
 }
 
 func (s *State) handleCmd(w http.ResponseWriter, r *http.Request) {
@@ -96,11 +102,9 @@ func (s *State) handleCmd(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *State) doCmd(c appengine.Context, cmd string) (string, error) {
-	stateKey := datastore.NewKey(c, "State", "state:"+user.Current(c).Email, 0, nil)
-
 	// load state
 	var encState encState
-	err := datastore.Get(c, stateKey, &encState)
+	err := datastore.Get(c, s.stateKey(c), &encState)
 	if err != nil && err != datastore.ErrNoSuchEntity {
 		return "", err
 	}
@@ -117,11 +121,24 @@ func (s *State) doCmd(c appengine.Context, cmd string) (string, error) {
 	if encState.X, err = s.iface.Marshal(); err != nil {
 		return "", err
 	}
-	if _, err = datastore.Put(c, stateKey, &encState); err != nil {
+	if _, err = datastore.Put(c, s.stateKey(c), &encState); err != nil {
 		return "", err
 	}
 
 	return reply, nil
+}
+
+func (s *State) handleDumpState(w http.ResponseWriter, r *http.Request) {
+	c := appengine.NewContext(r)
+	var encState encState
+	err := datastore.Get(c, s.stateKey(c), &encState)
+	if err != nil && err != datastore.ErrNoSuchEntity {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	w.Header().Set("Content-Type", "application/octet-stream")
+	w.Header().Set("Content-Length", strconv.Itoa(len(encState.X)))
+	w.Write(encState.X)
 }
 
 func (s *State) handleReset(w http.ResponseWriter, r *http.Request) {
@@ -131,9 +148,10 @@ func (s *State) handleReset(w http.ResponseWriter, r *http.Request) {
 	}
 
 	c := appengine.NewContext(r)
-	stateKey := datastore.NewKey(c, "State", "state:"+user.Current(c).Email, 0, nil)
+	stateKey := s.stateKey(c)
 	if err := datastore.Delete(c, stateKey); err != nil && err != datastore.ErrNoSuchEntity {
 		http.Error(w, err.Error(), 500)
+		return
 	}
 	fmt.Fprintf(w, "OK; reset state for %v\n", stateKey)
 }

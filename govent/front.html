@@ -6,7 +6,8 @@
 			body {
 				font-family: Monaco, monospace;
 			}
-			#reset {
+			button {
+				clear: right;
 				float: right;
 				font-size: larger;
 			}
@@ -31,6 +32,7 @@
 <h1>govent</h1>
 
 <button id="reset" type="button">Reset</button>
+<button id="dump-state" type="button">(debug) Dump State</button>
 
 <textarea id="buffer" readonly="readonly">
 </textarea>
@@ -55,6 +57,11 @@ $(function() {
 			       location.reload(true);
 			});
 		}
+	});
+	$('#dump-state').click(function() {
+		$.get('/dump-state', function(data) {
+		       postLine('# ' + data);
+		}, "text");
 	});
 
 	// Post an empty cmd to start.
