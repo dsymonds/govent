@@ -19,7 +19,11 @@ import (
 
 var frontPage = template.Must(template.New("").Parse(string(frontHTML))) // in front.html.go
 
+// Interface defines the API for a govent game.
 type Interface interface {
+	// Title returns the name of the game.
+	Title() string
+	// Execute runs a command.
 	Execute(cmd string) string
 
 	// state save and restore
@@ -52,7 +56,12 @@ func (s *State) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (s *State) handleFront(w http.ResponseWriter, r *http.Request) {
 	var b bytes.Buffer
-	if err := frontPage.Execute(&b, nil); err != nil {
+	data := struct {
+		Title string
+	}{
+		Title: s.iface.Title(),
+	}
+	if err := frontPage.Execute(&b, &data); err != nil {
 		http.Error(w, err.Error(), 500)
 		return
 	}

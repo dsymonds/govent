@@ -20,13 +20,9 @@ type game struct {
 	Location int // 0 == inside house, 1 == outside
 }
 
-func (g *game) Marshal() ([]byte, error) {
-	return json.Marshal(g)
-}
-
-func (g *game) Unmarshal(data []byte) error {
-	return json.Unmarshal(data, g)
-}
+func (g *game) Title() string               { return "Home Quest" }
+func (g *game) Marshal() ([]byte, error)    { return json.Marshal(g) }
+func (g *game) Unmarshal(data []byte) error { return json.Unmarshal(data, g) }
 
 func (g *game) Execute(cmd string) string {
 	g.Count++
