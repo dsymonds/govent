@@ -6,6 +6,7 @@ package govent
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"html/template"
 	"io"
 	"net/http"
@@ -40,6 +41,8 @@ func (s *State) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		s.handleFront(w, r)
 	case "/cmd":
 		s.handleCmd(w, r)
+	case "/reset":
+		s.handleReset(w, r)
 	default:
 		http.NotFound(w, r)
 	}
@@ -117,4 +120,18 @@ func (s *State) doCmd(c appengine.Context, cmd string) (string, error) {
 	}
 
 	return reply, nil
+}
+
+func (s *State) handleReset(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "POST" {
+		http.Error(w, "should be a POST", http.StatusMethodNotAllowed)
+		return
+	}
+
+	c := appengine.NewContext(r)
+	stateKey := datastore.NewKey(c, "State", "state:"+user.Current(c).Email, 0, nil)
+	if err := datastore.Delete(c, stateKey); err != nil && err != datastore.ErrNoSuchEntity {
+		http.Error(w, err.Error(), 500)
+	}
+	fmt.Fprintf(w, "OK; reset state for %v\n", stateKey)
 }

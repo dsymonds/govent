@@ -6,6 +6,10 @@
 			body {
 				font-family: Monaco, monospace;
 			}
+			#reset {
+				float: right;
+				font-size: larger;
+			}
 			#buffer {
 				display: block;
 				font-size: larger;
@@ -26,6 +30,8 @@
 
 <h1>govent</h1>
 
+<button id="reset" type="button">Reset</button>
+
 <textarea id="buffer" readonly="readonly">
 </textarea>
 
@@ -41,6 +47,13 @@ $(function() {
 	$('#input').keypress(function(event) {
 		if (event.which == 13) { // Return
 			cmd();
+		}
+	});
+	$('#reset').click(function() {
+		if (confirm("Reset game state?")) {
+			$.post('/reset', function() {
+			       location.reload(true);
+			});
 		}
 	});
 
