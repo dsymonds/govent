@@ -57,11 +57,14 @@ func (s *State) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *State) handleFront(w http.ResponseWriter, r *http.Request) {
+	c := appengine.NewContext(r)
 	var b bytes.Buffer
 	data := struct {
 		Title string
+		User  *user.User
 	}{
 		Title: s.iface.Title(),
+		User:  user.Current(c),
 	}
 	if err := frontPage.Execute(&b, &data); err != nil {
 		http.Error(w, err.Error(), 500)
@@ -143,6 +146,11 @@ func (s *State) doCmd(c appengine.Context, cmd string) (string, error) {
 
 func (s *State) handleDumpState(w http.ResponseWriter, r *http.Request) {
 	c := appengine.NewContext(r)
+	if !user.IsAdmin(c) {
+		http.Error(w, "admins only!", http.StatusForbidden)
+		return
+	}
+
 	var encState encState
 	err := datastore.Get(c, s.stateKey(c), &encState)
 	if err != nil && err != datastore.ErrNoSuchEntity {

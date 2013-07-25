@@ -35,7 +35,9 @@
 <h1>{{$.Title}}</h1>
 
 <button id="reset" type="button">Reset</button>
+{{if $.User.Admin}}
 <button id="dump-state" type="button">(debug) Dump State</button>
+{{end}}
 
 <textarea id="buffer" readonly="readonly">
 </textarea>
@@ -43,7 +45,8 @@
 <input id="input" type="text" />
 
 <div id="footer">
-	Powered by <a href="https://developers.google.com/appengine/docs/go/">a horde of gophers</a>.
+	You are {{$.User.Email}}.
+	This is powered by <a href="https://developers.google.com/appengine/docs/go/">a horde of gophers</a>.
 </div>
 
 <script type="text/javascript">
