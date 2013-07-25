@@ -11,6 +11,7 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"appengine"
 	"appengine/datastore"
@@ -132,6 +133,9 @@ func (s *State) doCmd(c appengine.Context, cmd string) (string, error) {
 	}
 
 	reply := s.iface.Execute(cmd)
+
+	// trim leading and trailing \n
+	reply = strings.Trim(reply, "\n")
 
 	// save state
 	if encState.X, err = s.iface.Marshal(); err != nil {

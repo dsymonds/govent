@@ -18,12 +18,12 @@
 				display: block;
 				font-size: larger;
 				height: 30em;
-				width: 60%;
+				width: 40em; /* fits 80 chars */
 			}
 			#input {
 				display: block;
 				font-size: larger;
-				width: 40%;
+				width: 40em;
 			}
 			#footer {
 				font-size: smaller;
@@ -90,19 +90,26 @@ function cmd() {
 
 function doCmd(input) {
 	$.post('/cmd', {cmd: input}, function(data) {
+		var delay = 0;
 		if (data.error) {
 			alert(data.error);
 		}
 		if (data.reply) {
-			postLine(data.reply);
+			// Multiline response should be staggered.
+			var lines = data.reply.split('\n');
+			for (var i = 0; i < lines.length; ++i) {
+				window.setTimeout(postLine.bind(null, lines[i]), delay);
+				delay += 500;  // ms
+			}
 		}
 		if (data.gameOver) {
-			postLine('Game over.');
+			window.setTimeout(postLine.bind(null, 'Game over.'), delay);
+			delay += 2000;  // ms
 			window.setTimeout(function() {
 				if (confirm('Game over. Play again?')) {
 					reset();
 				}
-			}, 2000);
+			}, delay);
 		}
 	});
 }
