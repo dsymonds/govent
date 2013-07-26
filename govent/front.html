@@ -118,6 +118,9 @@ function postLine(s) {
 	var x = $('#buffer').val();
 	x = x + s + '\n';
 	$('#buffer').val(x);
+
+	var b = $('#buffer')[0];
+	b.scrollTop = b.scrollHeight;
 }
 </script>
 
