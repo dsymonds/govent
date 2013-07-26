@@ -79,7 +79,7 @@ function reset() {
 }
 
 function cmd() {
-	var input = $.trim($('#input').val());
+	var input = $.trim($('#input').val()).toUpperCase();
 	if (input == '') {
 		return;
 	}
